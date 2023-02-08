@@ -1,0 +1,37 @@
+FROM alpine:3.16
+
+ARG user=perinity
+ARG group=perinity
+ARG uid=10001
+ARG gid=10001
+ARG CI_COMMIT_TAG=${CI_COMMIT_TAG}
+ARG SYNC_MR_TOKEN=${SYNC_MR_TOKEN}
+ARG CI_PROJECT_ID=${CI_PROJECT_ID}
+SHELL ["/bin/sh", "-eux", "-c"]
+
+RUN \
+    addgroup --system ${group} --gid ${gid} \
+    && adduser --system --uid ${uid} --ingroup ${group} --disabled-password --shell /bin/bash ${user}
+
+RUN \
+    apk --no-cache upgrade \
+    && apk --no-cache add \
+        python3 \
+        py3-pip  \
+        bash      \
+    && pip3 install --upgrade pip requests \
+    && mkdir -p /work
+
+COPY --chown=10001:perinity build/run.py  /work/run.py
+
+RUN \
+    chown 10001 /work \
+    && chmod "g+rwX" /work \
+    && chmod "+x" /work/run.py \
+    && chown 10001:perinity /work
+
+WORKDIR /work
+
+USER ${user}
+
+RUN ./run.py
