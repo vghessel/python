@@ -5,8 +5,11 @@ import json
 import re
 
 accessToken = os.getenv("SYNC_MR_TOKEN")
+
 headers = {"PRIVATE-TOKEN": accessToken,
-           'Content-Type': 'application/json', 'Accept': 'application/json'}
+           'Content-Type': 'application/json', 
+           'Accept': 'application/json'}
+           
 ciCommitTag = os.getenv("CI_COMMIT_TAG")
 projetcId = os.getenv("CI_PROJECT_ID")
 previousBuild = "0"
@@ -21,7 +24,7 @@ listTag = []
 for i in tagName:
     listTag.append(i['name'])
 
-print('Available versions in repo =>', listTag, '\n')
+print("Available versions in repo =>", listTag, '\n')
 
 regEx = re.compile('[a-z]?[0-9][-]?[a-z]?')
 filterRegEx = regEx.search(ciCommitTag).string
@@ -35,18 +38,19 @@ for T in listTag:
     minor = T[3]
     build = T[5]
 
-    if ((major == commitMajor)
-        and (minor == commitMinor)
-        and (build < commitBuild)
-            and (build > previousBuild)):
+    if ((major == commitMajor) and 
+        (minor == commitMinor) and
+        (build < commitBuild) and
+        (build > previousBuild)):
         previousBuild = build
         previousVersion = T
 
 if previousVersion == "0":
     previousVersion = ciCommitTag
 
-print("Previous version is", previousVersion +
-      ";", "New version is", ciCommitTag, '\n')
+print("Previous version is", previousVersion 
+        + ";", "New version is", ciCommitTag, '\n')
+        
 
 urlGit = 'https://github.com/aoliveira94/api/v4/projects/{}/repository/compare?from={}&to={}'
 getLog = requests.get(urlGit.format(projetcId,previousVersion,ciCommitTag), headers=headers)
@@ -55,7 +59,7 @@ try:
     tagCommits = json.loads(getLog.content)
     outputCommits = tagCommits['commits']
 except:
-    print('Tag not exists')
+    print("Tag does not exist")
     exit()
 
 for i in outputCommits:
@@ -70,13 +74,15 @@ try:
     insert['description'] = openfile.read()
     regexInsert = re.findall(r'[A-Z]+-\d', insert['description'])
     regexInsert = set(regexInsert)
+
     insert['description'] = '<table><tr><td colspan=3><strong>DetailedInformation</strong></td></tr><tr><th>Commit ID</th><th>Committer</th><th>Description</th></tr>{0}</table>'.format(
-    insert['description'])
+                            insert['description'])
+
     fileopen = open('./tagdata.json', 'w')
     fileopen.write(json.dumps(insert))
     fileopen.close()
 except:
-     print('[!] Release tag not exists')
+     print("[!] Release tag does not exist")
      exit()
 
 # POST THE RELEASE
